@@ -2,15 +2,12 @@ import pandas as pd
 import requests 
 import json
 import numpy
-import time
 from threading import Thread
 import json
-import tkinter as tk
-from tkinter import simpledialog
-from tkinter import scrolledtext
 from bs4 import BeautifulSoup
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+import smtplib
+import openpyxl
+from email.message import EmailMessage
 from sklearn.model_selection import train_test_split
 
 
@@ -36,27 +33,25 @@ def get_Date(product):
     average_price = [p for p in prices if mean - 2*std_dev <= p <= mean + 2*std_dev]
     return numpy.mean(average_price)
 
-def main():
-    type_ = input('Processor or VideoCard?: 1/2')
-    if type_ == '1': type_ = 'protsessory'
-    else: type_ = 'videokarty'
-    product = input('Name product: ')
-    print(get_Date(linkResponce(f'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-{product}/?currency=UAH&search%5Bfilter_enum_subcategory%5D%5B0%5D={type_}'), product))
+# def main():
+#     type_ = input('Processor or VideoCard?: 1/2')
+#     if type_ == '1': type_ = 'protsessory'
+#     else: type_ = 'videokarty'
+#     product = input('Name product: ')
+#     print(get_Date(linkResponce(f'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-{product}/?currency=UAH&search%5Bfilter_enum_subcategory%5D%5B0%5D={type_}'), product))
 
 best_pcs = []
-with open('./test/links.json', 'r') as file:
+with open('links.json', 'r') as file:
     links = json.load(file)
 
-with open('DataBase.json', 'r') as file:
-    best_pcs = json.load(file)
 
-
+data = []
 def search():
-    flag = False
     print('Початок')
-    for page in range(1, 10):
-        link = f'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/?currency=UAH&page={page}&search%5Bfilter_enum_state%5D%5B0%5D=used&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=12000&search%5Border%5D=created_at%3Adesc'
-        # Логіка пошуку компів
+    # Логіка пошуку компів
+    computerLinks = ['https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=1&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=2&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=3&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BF%D0%BA/?currency=UAH&page=1&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BF%D0%BA/?currency=UAH&page=2&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BF%D0%BA/?currency=UAH&page=3&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=1&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=2&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/if/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=3&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=1&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=2&search%5Bfilter_float_price%3Ato%5D=11000', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%96%D0%B3%D1%80%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=3&search%5Bfilter_float_price%3Ato%5D=11000']
+    for link in computerLinks:
+        print('Початок перевірки силки')
         try:
             soup = linkResponce(link)
             advertisament = soup.find_all('div', class_='css-1g5933j')
@@ -65,68 +60,18 @@ def search():
                 global illa
                 illa = illa + 1
                 print(illa)
-                try:
-                    if links[advert_url] == 'True':
-                        pass
-                    elif links[advert_url] == 'False':
-                        soup = linkResponce(advert_url)
-                        description = soup.find('div', class_='css-1o924a9').text
-                        price = int(float(soup.find('h3', class_='css-fqcbii').text.replace('грн.', '').replace(' ', '').replace('Договірна', '').replace('Договорная', '').replace('/за1шт.', '')))
+                soup = linkResponce(advert_url)
+                description = soup.find('div', class_='css-19duwlz').text
+                price = int(float(soup.find('h3', class_='css-fqcbii').text.replace('грн.', '').replace(' ', '').replace('Договірна', '').replace('Договорная', '').replace('/за1шт.', '')))
 
-                        brain(description, price, advert_url)
-
-                except KeyError:
-                    links[advert_url] = 'False'
-                    soup = linkResponce(advert_url)
-                    description = soup.find('div', class_='css-1o924a9').text
-                    price = int(float(soup.find('h3', class_='css-fqcbii').text.replace('грн.', '').replace(' ', '').replace('Договірна', '').replace('Договорная', '').replace('/за1шт.', '')))
-
-                    brain(description, price, advert_url)
-
-
+                print(67)
+                brain(description, price, advert_url)
         except:
             continue
 
-
-
-
-
-    linkidn = ['https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%B8%D0%B3%D1%80%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=2&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%B8%D0%B3%D1%80%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=3&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%B8%D0%B3%D1%80%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=4&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%B8%D0%B3%D1%80%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=5&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%B8%D0%B3%D1%80%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BF%D0%BA/?currency=UAH&page=1&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D0%B9-%D0%B1%D0%BB%D0%BE%D0%BA/?currency=UAH&page=1&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D0%B9-%D0%B1%D0%BB%D0%BE%D0%BA/?currency=UAH&page=2&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D0%B9-%D0%B1%D0%BB%D0%BE%D0%BA/?currency=UAH&page=3&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D0%B9-%D0%B1%D0%BB%D0%BE%D0%BA/?currency=UAH&page=4&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D0%B9-%D0%B1%D0%BB%D0%BE%D0%BA/?currency=UAH&page=5&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=1&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=2&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=3&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=4&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private', 'https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/nastolnye-kompyutery/q-%D0%BA%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D0%B5%D1%80/?currency=UAH&page=5&search%5Bfilter_float_price%3Afrom%5D=4000&search%5Bfilter_float_price%3Ato%5D=10000&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private']
-    for linki in linkidn:
-        for page in range(1, 6):
-            link = linki
-            # Логіка пошуку компів
-            try:
-                soup = linkResponce(link)
-                advertisament = soup.find_all('div', class_='css-1g5933j')
-                for i in advertisament:
-                    advert_url = "https://www.olx.ua" + i.find('a').get('href')
-                    illa = illa + 1
-                    print(illa)
-                    try:
-                        if links[advert_url] == 'True':
-                            pass
-                        elif links[advert_url] == 'False':
-                            soup = linkResponce(advert_url)
-                            description = soup.find('div', class_='css-1o924a9').text
-                            price = int(float(soup.find('h3', class_='css-fqcbii').text.replace('грн.', '').replace(' ', '').replace('Договірна', '').replace('Договорная', '').replace('/за1шт.', '')))
-
-                            brain(description, price, advert_url)
-
-                    except KeyError:
-                        links[advert_url] = 'False'
-                        soup = linkResponce(advert_url)
-                        description = soup.find('div', class_='css-1o924a9').text
-                        price = int(float(soup.find('h3', class_='css-fqcbii').text.replace('грн.', '').replace(' ', '').replace('Договірна', '').replace('Договорная', '').replace('/за1шт.', '')))
-
-                        brain(description, price, advert_url)
-
-
-            except:
-                continue
-
 def brain(desc, price, link):
     desc = desc.lower()
+    print('Перевірка пк')
 
     processor_keywords = {'i3', 'i5', 'i7', 'xeon', 'intel', 'athlon', 'fx', 'pentium', 'ryzen'}
     videocard_keywords = {'gtx', 'rx', '1060', '580', '470', '570', '1050', '1070', 'rtx'}
@@ -184,62 +129,63 @@ def brain(desc, price, link):
         
         for key, value in videocard_map.items():
             if key in videocard:
-                videocard2 = True
                 videocard = value
                 break
-            else:
-                videocard2 = False
+    
+    data.append((videocard, processor, price))
 
-    if 'rx' in videocard.lower():
-        links[link] = 'True'
-        print('хренова відюха', link, videocard)
-        return False
+
+
+def create_excel(data, filename="computer_prices.xlsx"):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "PC Prices"
+
+    # Заголовки
+    ws.append(["GPU", "CPU", "Price (UAH)"])
+
+    # Додаємо всі рядки з даними
+    for gpu, cpu, price in data:
+        ws.append([gpu, cpu, price])
+
+    # Зберігаємо файл
+    wb.save(filename)
+    print(f"Excel-файл '{filename}' створено.")
+    return filename
+
+
+def send_email(receiver_email, filename):
+    sender_email = "sakovskiy3.0@gmail.com" 
+    sender_password = "xsok qshw konu nden"  
+    msg = EmailMessage()
+    msg["Subject"] = "Файл Excel із цінами комп'ютерів"
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg.set_content("Ось ваш список комп'ютерних збірок у форматі Excel.")
+
+    # Додаємо Excel-файл
+    with open(filename, "rb") as file:
+        msg.add_attachment(file.read(), maintype="application", subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=filename)
+
+    # Відправка через SMTP
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+
+    print(f"Лист із файлом '{filename}' надіслано на {receiver_email}")
+
+
     
 
-    if videocard2 == False: videocard = 'None'
 
-    bad_processors = ["xeon", "fx", "phenom", "i7-3770", "i5-3470", "pentium", "i5-4460", "i5-4570", "i5-2400", "i7-8700", "i5-4670", "i7-6700", "i7-2600", "i5-3570"]
-    if processor.lower() in bad_processors:
-        links[link] = 'True'
-        print('хреновий проц', link, processor)
-        return False
-    else:
-        #Друга частина роботи програми
-        with open('Olx.json', 'r') as file:
-            prices_list = json.load(file)
-        try: processor_price = prices_list[processor]
-        except KeyError: processor_price = 2000
-
-        if videocard:
-            try: videocard_price = prices_list[videocard]
-            except KeyError: 
-                videocard_price = 1000
-        else: videocard_price = 0
-
-        # Находим оперативну пам'ять та материнську плату
-        rama = 0
-        rams = ['16gb', '16 gb', '24 гб', '24гб', '32gb', '32 gb', '8gb', '8 gb', '16 гб', '16гб', '8 гб', '8гб']    
-        found_ram = next((ram for ram in rams if ram in desc), None)
-        if found_ram:
-            if '16' in found_ram: rama = 1000
-            elif '8' in found_ram: rama = 500
-            elif '32' in found_ram: rama = 2000 
-
-        mother = 0
-        if 'yzen' in processor: mother = 2300
-        else: mother = 1300
-
-
-        # Приблизна собівартість компютера
-        cost_of_production = int(processor_price) + int(videocard_price) + mother + rama + 200 + 600 + 500 + 300 + 800
-        if cost_of_production > price or cost_of_production >= price * 0.90:
-            best_pcs.append({processor: int(processor_price), videocard: int(videocard_price), 'Ram': rama, 'Mother': mother, 'Self-Cost': cost_of_production, 'link': link,'Grade': 0})
-            links[link] = 'True'
-            return True
 
 
 search()
-print(best_pcs)
+receiver_email = "sakovskiy3.0@gmail.com"
+excel_file = create_excel(data)
+send_email(receiver_email, excel_file)
+
+
 with open('./test/links.json', 'w') as file:
     json.dump(links, file, indent=4)
 
