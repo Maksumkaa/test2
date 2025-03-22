@@ -186,11 +186,8 @@ excel_file = create_excel(data)
 send_email(receiver_email, excel_file)
 
 
-with open('./test/links.json', 'w') as file:
+with open('links.json', 'w') as file:
     json.dump(links, file, indent=4)
 
-with open('DataBase.json', 'w') as file:
-    json.dump(best_pcs, file, indent=4)
-    print('All good')
 
 
