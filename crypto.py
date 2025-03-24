@@ -1,14 +1,12 @@
-import pandas as pd
+
 import requests 
 import json
 import numpy
-from threading import Thread
 import json
 from bs4 import BeautifulSoup
 import smtplib
 import openpyxl
 from email.message import EmailMessage
-from sklearn.model_selection import train_test_split
 
 
 def linkResponce(url):
