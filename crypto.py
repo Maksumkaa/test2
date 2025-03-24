@@ -131,12 +131,15 @@ def brain(desc, price, link):
             if key in videocard:
                 videocard = value
                 break
-    
+    else:
+        videocard = 'None'
     data.append((videocard, processor, price))
 
 
-
 def create_excel(data, filename="computer_prices.xlsx"):
+    # Сортуємо дані за відеокартою (GPU)
+    data_sorted = sorted(data, key=lambda x: x[0].lower())  # Сортуємо без урахування регістру літер
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "PC Prices"
@@ -145,7 +148,7 @@ def create_excel(data, filename="computer_prices.xlsx"):
     ws.append(["GPU", "CPU", "Price (UAH)"])
 
     # Додаємо всі рядки з даними
-    for gpu, cpu, price in data:
+    for gpu, cpu, price in data_sorted:
         ws.append([gpu, cpu, price])
 
     # Зберігаємо файл
@@ -156,7 +159,8 @@ def create_excel(data, filename="computer_prices.xlsx"):
 
 def send_email(receiver_email, filename):
     sender_email = "sakovskiy3.0@gmail.com" 
-    sender_password = "xsok qshw konu nden"  
+    sender_password = "xsok qshw konu nden"  # Пароль додатку з Google
+
     msg = EmailMessage()
     msg["Subject"] = "Файл Excel із цінами комп'ютерів"
     msg["From"] = sender_email
@@ -165,7 +169,9 @@ def send_email(receiver_email, filename):
 
     # Додаємо Excel-файл
     with open(filename, "rb") as file:
-        msg.add_attachment(file.read(), maintype="application", subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=filename)
+        msg.add_attachment(file.read(), maintype="application",
+                           subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                           filename=filename)
 
     # Відправка через SMTP
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -174,16 +180,14 @@ def send_email(receiver_email, filename):
 
     print(f"Лист із файлом '{filename}' надіслано на {receiver_email}")
 
-
     
 
 
 
 
 search()
-receiver_email = "sakovskiy3.0@gmail.com"
-excel_file = create_excel(data)
-send_email(receiver_email, excel_file)
+filename = create_excel(data)
+send_email("sakovskiy3.0@gmail.com", filename)
 
 
 with open('links.json', 'w') as file:
